@@ -1,0 +1,6 @@
+//TODO : 1- make surfaces in detail screen slip under article body first toolbar the image then metadata
+//TODO : 2- in main screen make all items in  one surface and the title still be shown when scroll
+//TODO : 3- we need some animation when going from main to detail like repositioning image
+//Todo : 4- another animation to indicate the ability to scroll right to switch between articles
+//todo : 5- in landscape the detail screen must change bring the img to the left and the body to the right
+//todo :: 6- in larger screens apply one screen for both fragments
