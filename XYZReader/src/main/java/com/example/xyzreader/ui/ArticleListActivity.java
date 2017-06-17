@@ -11,6 +11,8 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
@@ -27,6 +29,7 @@ import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Adapter;
 import android.widget.TextView;
 
 import com.android.volley.VolleyError;
@@ -63,7 +66,7 @@ public class ArticleListActivity extends AppCompatActivity implements
     private SimpleDateFormat outputFormat = new SimpleDateFormat();
     // Most time functions can only handle 1902 - 2037
     private GregorianCalendar START_OF_EPOCH = new GregorianCalendar(2,1,1);
-
+    private boolean sw600=false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,6 +86,7 @@ public class ArticleListActivity extends AppCompatActivity implements
         if (savedInstanceState == null) {
             refresh();
         }
+        sw600=getResources().getBoolean(R.bool.sw600);
     }
 
     private void refresh() {
@@ -162,8 +166,16 @@ public class ArticleListActivity extends AppCompatActivity implements
                 @Override
                 public void onClick(View view) {
 
-                    startActivity(new Intent(Intent.ACTION_VIEW,
-                            ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition()))));
+                    if(!sw600)
+                        startActivity(new Intent(Intent.ACTION_VIEW,
+                                ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition()))));
+                    else{
+                        mCursor.moveToPosition(vh.position);
+                        ArticleDetailFragmentDialog articleDetailFragmentDialog=ArticleDetailFragmentDialog.newInstance(mCursor.getString(ArticleLoader.Query.TITLE)
+                        ,mCursor.getString(ArticleLoader.Query.BODY),mCursor.getString(ArticleLoader.Query.PHOTO_URL),
+                                mCursor.getString(ArticleLoader.Query.AUTHOR),mCursor.getString(ArticleLoader.Query.PUBLISHED_DATE));
+                        getSupportFragmentManager().beginTransaction().add(articleDetailFragmentDialog,"ArticleDetailFragmentDialog").addToBackStack(null).commit();
+                    }
                 }
             });
             return vh;
@@ -182,6 +194,7 @@ public class ArticleListActivity extends AppCompatActivity implements
 
         @Override
         public void onBindViewHolder(final ViewHolder holder, int position) {
+            holder.position=position;
             mCursor.moveToPosition(position);
             holder.titleView.setText(mCursor.getString(ArticleLoader.Query.TITLE));
             Date publishedDate = parsePublishedDate();
@@ -241,6 +254,7 @@ public class ArticleListActivity extends AppCompatActivity implements
         public View bgView;
         public int mutedColor;
         public Bitmap bitmap;
+        public int position;
         public ViewHolder(View view) {
             super(view);
             thumbnailView = (DynamicHeightNetworkImageView) view.findViewById(R.id.thumbnail);

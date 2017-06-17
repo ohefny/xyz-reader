@@ -44,9 +44,9 @@ public class ArticleDetailFragment extends Fragment implements
         LoaderManager.LoaderCallbacks<Cursor> {
     private static final String DATA_LOADED = "LOADED";
     private static final String BODY_KEY ="BODY_KEY" ;
-    public final String TITLE_KEY="TITLE_KEY";
-    public final String IMG_KEY="IMG_KEY";
-    public final String BY_KEY="BY_KEY";
+    private final String TITLE_KEY="TITLE_KEY";
+    private final String IMG_KEY="IMG_KEY";
+    private final String BY_KEY="BY_KEY";
     public final String DATE_KEY="DATE_KEY";
 
     private static final String TAG = "ArticleDetailFragment";
