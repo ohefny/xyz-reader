@@ -5,7 +5,9 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.ShareCompat;
@@ -16,6 +18,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,6 +43,7 @@ public class ArticleDetailFragmentDialog extends DialogFragment {
     static private final String IMG_KEY="IMG_KEY";
     static private final String BY_KEY="BY_KEY";
     static private final String DATE_KEY="DATA_KEY";
+    private static final String TRANSITION_KEY ="TRANSITION_KEY" ;
     private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
     private SimpleDateFormat outputFormat = new SimpleDateFormat();
     private GregorianCalendar START_OF_EPOCH = new GregorianCalendar(2,1,1);
@@ -47,18 +51,25 @@ public class ArticleDetailFragmentDialog extends DialogFragment {
     private View mRootView;
     CustomAspectImage mPhotoView;
     private String mDate;
+    private String mTransition;
 
     public ArticleDetailFragmentDialog() {
         // Required empty public constructor
     }
-
-    public static ArticleDetailFragmentDialog newInstance(String Title,String Body,String ImgUrl,String By,String date){
+    @Override
+    public void onActivityCreated(Bundle arg0) {
+        super.onActivityCreated(arg0);
+        getDialog().getWindow()
+                .getAttributes().windowAnimations = R.style.DialogAnimation;
+    }
+    public static ArticleDetailFragmentDialog newInstance(String Title,String Body,String ImgUrl,String By,String date,String transition){
         Bundle bundle=new Bundle();
         bundle.putString(BODY_KEY,Body);
         bundle.putString(TITLE_KEY,Title);
         bundle.putString(IMG_KEY,ImgUrl);
         bundle.putString(BY_KEY,By);
         bundle.putString(DATE_KEY,date);
+        bundle.putString(TRANSITION_KEY,transition);
         ArticleDetailFragmentDialog fragment=new ArticleDetailFragmentDialog();
         fragment.setArguments(bundle);
         return fragment;
@@ -72,9 +83,11 @@ public class ArticleDetailFragmentDialog extends DialogFragment {
             mBy=getArguments().getString(BY_KEY);
             mImgUrl=getArguments().getString(IMG_KEY);
             mDate=getArguments().getString(DATE_KEY);
+            mTransition=getArguments().getString(TRANSITION_KEY);
             mRootView= inflater.inflate(R.layout.fragment_article_detail_fragment_dialog, container, false);
             setMetaData();
         }
+        postponeEnterTransition();
         mRootView.findViewById(R.id.share_fab).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -101,6 +114,9 @@ public class ArticleDetailFragmentDialog extends DialogFragment {
         title.setText(mTitle);
         formatSubTitle();
         byLine.setText(mBy);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            mPhotoView.setTransitionName(mTransition);
+        }
         ImageLoaderHelper.getInstance(getActivity()).getImageLoader()
                 .get(mImgUrl, new ImageLoader.ImageListener() {
                     @Override
@@ -109,6 +125,7 @@ public class ArticleDetailFragmentDialog extends DialogFragment {
                         if (bitmap != null) {
                             Palette p = Palette.generate(bitmap, 12);
                             mPhotoView.setImageBitmap(imageContainer.getBitmap());
+                            scheduleStartPostponedTransition(mPhotoView);
                         }
                     }
 
@@ -131,6 +148,16 @@ public class ArticleDetailFragmentDialog extends DialogFragment {
             Log.i(TAG, "passing today's date");
             return new Date();
         }
+    }
+    private void scheduleStartPostponedTransition(final View sharedElement) {
+        sharedElement.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                sharedElement.getViewTreeObserver().removeOnPreDrawListener(this);
+                ActivityCompat.startPostponedEnterTransition(getActivity());
+                return true;
+            }
+        });
     }
     private void formatSubTitle(){
         Date publishedDate = parsePublishedDate();

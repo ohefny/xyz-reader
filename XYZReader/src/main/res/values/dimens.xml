@@ -11,5 +11,6 @@
     <dimen name="keyline_1">16dp</dimen>
     <dimen name="keyline_2">72dp</dimen>
     <dimen name="keyline2_minus">56dp</dimen>
+    <dimen name="init_scroll_up_distance">100dp</dimen>
 
 </resources>

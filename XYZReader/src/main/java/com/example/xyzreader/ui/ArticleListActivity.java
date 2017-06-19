@@ -1,5 +1,7 @@
 package com.example.xyzreader.ui;
 
+import android.annotation.TargetApi;
+import android.app.ActivityOptions;
 import android.app.LoaderManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -8,11 +10,15 @@ import android.content.IntentFilter;
 import android.content.Loader;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.SharedElementCallback;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
@@ -29,6 +35,7 @@ import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.Adapter;
 import android.widget.TextView;
 
@@ -43,6 +50,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Map;
 
 /**
  * An activity representing a list of Articles. This activity has different presentations for
@@ -54,6 +63,8 @@ public class ArticleListActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor> {
 
 
+    public static final String CURRENT_ELEMENT_KEY ="CURR" ;
+    public static final String START_ELEMENT_KEY = "START";
     private Context mContext;
     private static final String TAG = ArticleListActivity.class.toString();
     private Toolbar mToolbar;
@@ -67,12 +78,78 @@ public class ArticleListActivity extends AppCompatActivity implements
     // Most time functions can only handle 1902 - 2037
     private GregorianCalendar START_OF_EPOCH = new GregorianCalendar(2,1,1);
     private boolean sw600=false;
+    private long startItemPos=0;
+
+    private Bundle mTmpReenterState;
+    private final SharedElementCallback mCallback = new SharedElementCallback() {
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+        @Override
+        public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+            if (mTmpReenterState != null) {
+                int mCurrentItem=mTmpReenterState.getInt(CURRENT_ELEMENT_KEY);
+                int startItemPos=mTmpReenterState.getInt(START_ELEMENT_KEY);
+                if(startItemPos!=mCurrentItem&&mRecyclerView.getAdapter()!=null){
+                    View view=mRecyclerView.getChildAt(mCurrentItem);
+//                    view.setTransitionName(getResources().getString(R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem));
+                    Log.d(ArticleListActivity.class.getSimpleName(),"Fuck Return Transition Name :: "+getResources().getString(R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem));
+                    if(view!=null){
+                        //names.remove(mRecyclerView.getChildAt(startItemPos).getTransitionName());
+                        names.clear();
+                        names.add(getResources().getString(R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem));
+
+                        //sharedElements.remove(mRecyclerView.getChildAt(startItemPos));
+                        sharedElements.clear();
+                        sharedElements.put(getResources().getString
+                                        (R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem), view);
+                    }
+
+                }
+
+                else if(mRecyclerView.getAdapter()==null) {
+                    sharedElements.clear();
+                    names.clear();
+                    // If mTmpReenterState is null, then the activity is exiting.
+                }
+                mTmpReenterState = null;
+            }
+
+
+            }
+    };
+
+    @Override
+    public void onActivityReenter(int resultCode, Intent data) {
+
+        mTmpReenterState = new Bundle(data.getExtras());
+        int mCurrentItem=mTmpReenterState.getInt(CURRENT_ELEMENT_KEY);
+        int startItemPos=mTmpReenterState.getInt(START_ELEMENT_KEY);
+        if(mCurrentItem!=startItemPos){
+            mRecyclerView.scrollToPosition(mCurrentItem);
+        }
+        postPoneTransition();
+        super.onActivityReenter(resultCode, data);
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private void postPoneTransition() {
+        postponeEnterTransition();
+        mRecyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                mRecyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
+                mRecyclerView.requestLayout();
+                startPostponedEnterTransition();
+                return true;
+            }
+        });
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mContext=this;
         setContentView(R.layout.activity_article_list);
-
+        setExitSharedElementCallback(mCallback);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
 
 
@@ -162,18 +239,37 @@ public class ArticleListActivity extends AppCompatActivity implements
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = getLayoutInflater().inflate(R.layout.list_item_article, parent, false);
             final ViewHolder vh = new ViewHolder(view);
+
             view.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    startItemPos=(vh.position);
+                    if(!sw600){
 
-                    if(!sw600)
-                        startActivity(new Intent(Intent.ACTION_VIEW,
-                                ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition()))));
+                        Bundle bundle= null;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
+                            bundle = ActivityOptions.makeSceneTransitionAnimation
+                                    (ArticleListActivity.this,vh.thumbnailView,vh.thumbnailView.getTransitionName()).toBundle();
+                            Log.d(ArticleListActivity.class.getSimpleName(),"Fuck Clicked Item :: "+getResources().getString(R.string.article_img_transition)+getItemId(vh.position));
+
+                        }
+                        Intent intent=new Intent(Intent.ACTION_VIEW,
+                                ItemsContract.Items.buildItemUri(getItemId(vh.position)));
+                        if(vh.bitmap!=null){
+                            intent.putExtra(START_ELEMENT_KEY,vh.position);
+                            intent.putExtra(ArticleDetailActivity.TRANSITION_NAME,getResources().getString(R.string.article_img_transition)+vh.position);
+                        }
+                        startActivity(intent,bundle);
+
+                    }
                     else{
+
                         mCursor.moveToPosition(vh.position);
                         ArticleDetailFragmentDialog articleDetailFragmentDialog=ArticleDetailFragmentDialog.newInstance(mCursor.getString(ArticleLoader.Query.TITLE)
                         ,mCursor.getString(ArticleLoader.Query.BODY),mCursor.getString(ArticleLoader.Query.PHOTO_URL),
-                                mCursor.getString(ArticleLoader.Query.AUTHOR),mCursor.getString(ArticleLoader.Query.PUBLISHED_DATE));
+                                mCursor.getString(ArticleLoader.Query.AUTHOR),mCursor.getString(ArticleLoader.Query.PUBLISHED_DATE),
+                                getResources().getString(R.string.article_img_transition)+getItemId(vh.position));
                         getSupportFragmentManager().beginTransaction().add(articleDetailFragmentDialog,"ArticleDetailFragmentDialog").addToBackStack(null).commit();
                     }
                 }
@@ -193,11 +289,14 @@ public class ArticleListActivity extends AppCompatActivity implements
         }
 
         @Override
-        public void onBindViewHolder(final ViewHolder holder, int position) {
+        public void onBindViewHolder(final ViewHolder holder, final int position) {
             holder.position=position;
             mCursor.moveToPosition(position);
             holder.titleView.setText(mCursor.getString(ArticleLoader.Query.TITLE));
             Date publishedDate = parsePublishedDate();
+            Bundle bundle= null;
+
+            //Log.d(ArticleListActivity.class.getSimpleName(),"Fuck Bind Transition Item :: "+getResources().getString(R.string.article_img_transition)+getItemId(holder.position));
             if (!publishedDate.before(START_OF_EPOCH.getTime())) {
 
                 holder.subtitleView.setText(Html.fromHtml(
@@ -227,6 +326,9 @@ public class ArticleListActivity extends AppCompatActivity implements
                                 holder.thumbnailView.setImageBitmap(imageContainer.getBitmap());
                                 holder.bgView.setBackgroundColor(holder.mutedColor);
                                 holder.thumbnailView.setAspectRatio(mCursor.getFloat(ArticleLoader.Query.ASPECT_RATIO));
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                    holder.thumbnailView.setTransitionName(getResources().getString(R.string.article_img_transition)+getItemId(position));
+                                }
                             }
                         }
 

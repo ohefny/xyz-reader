@@ -1,5 +1,7 @@
 package com.example.xyzreader.ui;
 
+import android.animation.Animator;
+import android.animation.ObjectAnimator;
 import android.app.Fragment;
 import android.app.LoaderManager;
 import android.content.Intent;
@@ -15,19 +17,25 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ShareCompat;
+import android.support.v4.widget.NestedScrollView;
 import android.support.v7.graphics.Palette;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.text.format.DateUtils;
+import android.transition.Transition;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.animation.AlphaAnimation;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.android.volley.VolleyError;
@@ -105,7 +113,6 @@ public class ArticleDetailFragment extends Fragment implements
     @Override
     public void onDetach() {
         super.onDetach();
-        Log.d(this.getClass().getSimpleName(),"Fuck OnDetach");
         mRootView=null;
     }
 
@@ -115,7 +122,6 @@ public class ArticleDetailFragment extends Fragment implements
         if (getArguments().containsKey(ARG_ITEM_ID)) {
             mItemId = getArguments().getLong(ARG_ITEM_ID);
         }
-        Log.d(this.getClass().getSimpleName()," Fuck onCreate");
         mIsCard = getResources().getBoolean(R.bool.detail_is_card);
         mStatusBarFullOpacityBottom = getResources().getDimensionPixelSize(
                 R.dimen.detail_card_top_margin);
@@ -144,13 +150,10 @@ public class ArticleDetailFragment extends Fragment implements
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
-        Log.d(this.getClass().getSimpleName()," Fuck onCreateView");
-
 
         mRootView = inflater.inflate(R.layout.fragment_article_detail, container, false);
-
         mPhotoView=(CustomAspectImage)mRootView.findViewById(R.id.photo);
-        Log.d(this.getClass().getSimpleName()," Fuck Portrait :: "+(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT));
+
         if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT)
             PortraitViewSetup();
         mToolbar = (Toolbar) this.mRootView.findViewById(R.id.toolbar);
@@ -170,7 +173,7 @@ public class ArticleDetailFragment extends Fragment implements
                         .getIntent(), getString(R.string.action_share)));
             }
         });
-           Log.d(this.getClass().getSimpleName(),"Fuck OnCreateView SaveInstanceState == "+(savedInstanceState!=null));
+
 
         if(savedInstanceState!=null&&savedInstanceState.getBoolean(DATA_LOADED)){
             mBody=savedInstanceState.getString(BODY_KEY);
@@ -190,7 +193,6 @@ public class ArticleDetailFragment extends Fragment implements
 
     private void PortraitViewSetup() {
         mCollapssingToolbar = (CollapsingToolbarLayout) this.mRootView.findViewById(R.id.collapsing_toolbar_layout);
-        Log.d(ArticleDetailFragment.class.getSimpleName(),"Fuck Toolbar created "+(mCollapssingToolbar!=null));
         mPhotoView.setAspectRatio(3,4);
     }
 
@@ -251,6 +253,11 @@ public class ArticleDetailFragment extends Fragment implements
             mToolbar.setSubtitle(byLine);
             mToolbar.setTitle(title);
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Log.d(ArticleDetailFragment.class.getSimpleName(),"Fuck Item :: "+getResources().getString(R.string.article_img_transition)+mItemId);
+            mPhotoView.setTransitionName(getResources().getString(R.string.article_img_transition)+mItemId);
+        }
         ImageLoaderHelper.getInstance(getActivity()).getImageLoader()
                 .get(mImgUrl, new ImageLoader.ImageListener() {
                     @Override
@@ -260,6 +267,7 @@ public class ArticleDetailFragment extends Fragment implements
                             Palette p = Palette.generate(bitmap, 12);
                             mMutedColor = p.getDarkMutedColor(0xFF333333);
                             mPhotoView.setImageBitmap(imageContainer.getBitmap());
+                            scheduleStartPostponedTransition(mPhotoView);
                         }
                     }
 
@@ -273,6 +281,18 @@ public class ArticleDetailFragment extends Fragment implements
         bodyView.setTypeface(Typeface.createFromAsset(getResources().getAssets(), "Rosario-Regular.ttf"));
         bodyView.setText(mBody);
     }
+
+    private void scheduleStartPostponedTransition(final View sharedElement) {
+        sharedElement.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                sharedElement.getViewTreeObserver().removeOnPreDrawListener(this);
+                    ActivityCompat.startPostponedEnterTransition(getActivity());
+                return true;
+            }
+        });
+    }
+
 
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
@@ -300,7 +320,6 @@ public class ArticleDetailFragment extends Fragment implements
 
     @Override
     public void onLoaderReset(Loader<Cursor> cursorLoader) {
-        Log.d(this.getClass().getSimpleName(),"Fuck Loader Reset");
         mCursor = null;
         //if (mRootView!=null)
         //bindViews();
@@ -308,7 +327,6 @@ public class ArticleDetailFragment extends Fragment implements
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        Log.d(this.getClass().getSimpleName(),"Fuck On Save Instance and Loaded "+((data_loaded)));
         outState.putBoolean(DATA_LOADED,data_loaded);
         outState.putString(BODY_KEY,mBody);
         outState.putString(TITLE_KEY,title);
@@ -330,4 +348,10 @@ public class ArticleDetailFragment extends Fragment implements
                 : mPhotoView.getHeight() - mScrollY;
     }
 
+    public CustomAspectImage getImage() {
+        if(mRootView.findViewById(R.id.photo)!=null){
+            return mPhotoView;
+        }
+        return null;
+    }
 }

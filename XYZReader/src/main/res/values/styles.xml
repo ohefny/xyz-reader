@@ -30,5 +30,9 @@
         <item name="android:textColorSecondary">@color/secondary_text</item>
 
     </style>
+    <style name="DialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/slide_up_dialog</item>
+        <item name="android:windowExitAnimation">@anim/slide_down_dialog</item>
+    </style>
 
 </resources>
