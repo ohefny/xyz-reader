@@ -92,7 +92,7 @@ public class ArticleListActivity extends AppCompatActivity implements
                 View view=mRecyclerView.getChildAt(mCurrentItem);
                 if(startItemPos!=mCurrentItem&&mRecyclerView.getAdapter()!=null){
                     if(view!=null){
-                        Log.d(ArticleListActivity.class.getSimpleName(),"Fuck Return Transition Name :: "+getResources().getString(R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem));
+
                         //names.remove(mRecyclerView.getChildAt(startItemPos).getTransitionName());
                         names.clear();
                         names.add(getResources().getString(R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem));
@@ -260,7 +260,7 @@ public class ArticleListActivity extends AppCompatActivity implements
 
                             bundle = ActivityOptions.makeSceneTransitionAnimation
                                     (ArticleListActivity.this,vh.thumbnailView,vh.thumbnailView.getTransitionName()).toBundle();
-                            Log.d(ArticleListActivity.class.getSimpleName(),"Fuck Clicked Item :: "+getResources().getString(R.string.article_img_transition)+getItemId(vh.position));
+
 
                         }
                         Intent intent=new Intent(Intent.ACTION_VIEW,
@@ -305,7 +305,7 @@ public class ArticleListActivity extends AppCompatActivity implements
             Date publishedDate = parsePublishedDate();
             Bundle bundle= null;
 
-            //Log.d(ArticleListActivity.class.getSimpleName(),"Fuck Bind Transition Item :: "+getResources().getString(R.string.article_img_transition)+getItemId(holder.position));
+
             if (!publishedDate.before(START_OF_EPOCH.getTime())) {
 
                 holder.subtitleView.setText(Html.fromHtml(

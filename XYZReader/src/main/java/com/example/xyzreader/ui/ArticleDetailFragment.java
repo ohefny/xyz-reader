@@ -267,7 +267,6 @@ public class ArticleDetailFragment extends Fragment implements
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Log.d(ArticleDetailFragment.class.getSimpleName(),"Fuck Item :: "+getResources().getString(R.string.article_img_transition)+mItemId);
             mPhotoView.setTransitionName(getResources().getString(R.string.article_img_transition)+mItemId);
         }
         ImageLoaderHelper.getInstance(getActivity()).getImageLoader()

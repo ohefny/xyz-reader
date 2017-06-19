@@ -84,7 +84,7 @@ public class ArticleDetailActivity extends AppCompatActivity
                     names.add(str);
                     sharedElements.clear();
                     sharedElements.put(str, sharedElement);
-                    Log.d(ArticleDetailActivity.class.getSimpleName(),"Fuck Return Transition Name :: "+sharedElement.getTransitionName());
+
                 }
                 if(mDestroyed){
                     getWindow().setSharedElementReturnTransition(null);
@@ -142,7 +142,6 @@ public class ArticleDetailActivity extends AppCompatActivity
             @Override
             public void onPageSelected(int position) {
                 mCurrentPosition=position;
-                Log.d(ArticleDetailActivity.class.getSimpleName(),"Fuck Pos::" + mCurrentPosition);
                 if (mCursor != null) {
                     mCursor.moveToPosition(position);
                 }
