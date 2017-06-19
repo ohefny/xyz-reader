@@ -90,13 +90,7 @@ public class ArticleListActivity extends AppCompatActivity implements
                 mCurrentItem=mTmpReenterState.getInt(CURRENT_ELEMENT_KEY);
                 int startItemPos=mTmpReenterState.getInt(START_ELEMENT_KEY);
                 View view=mRecyclerView.getChildAt(mCurrentItem);
-                if(startItemPos==mCurrentItem&&view!=null){
-                  //  scheduleStartPostPone(view);
-                }
                 if(startItemPos!=mCurrentItem&&mRecyclerView.getAdapter()!=null){
-
-//                    view.setTransitionName(getResources().getString(R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem));
-
                     if(view!=null){
                         Log.d(ArticleListActivity.class.getSimpleName(),"Fuck Return Transition Name :: "+getResources().getString(R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem));
                         //names.remove(mRecyclerView.getChildAt(startItemPos).getTransitionName());
@@ -107,20 +101,19 @@ public class ArticleListActivity extends AppCompatActivity implements
                         sharedElements.clear();
                         sharedElements.put(getResources().getString
                                         (R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem), view);
-                        scheduleStartPostPone(view);
+
                     }
-                    else{
-                        startPostponedEnterTransition();
-                    }
+
 
                 }
 
 
-                else if(mRecyclerView.getAdapter()==null) {
+                else if(mRecyclerView.getAdapter()==null||view==null) {
                     sharedElements.clear();
                     names.clear();
                     // If mTmpReenterState is null, then the activity is exiting.
                 }
+                scheduleStartPostPone(view);
                 mTmpReenterState = null;
             }
 

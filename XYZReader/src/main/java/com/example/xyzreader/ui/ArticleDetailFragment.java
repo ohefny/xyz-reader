@@ -155,7 +155,8 @@ public class ArticleDetailFragment extends Fragment implements
     @Override
     public void onResume() {
         super.onResume();
-        mAppBarLayout.addOnOffsetChangedListener(this);
+        if(mAppBarLayout!=null)
+            mAppBarLayout.addOnOffsetChangedListener(this);
     }
 
     @Override
@@ -275,8 +276,6 @@ public class ArticleDetailFragment extends Fragment implements
                     public void onResponse(ImageLoader.ImageContainer imageContainer, boolean b) {
                         Bitmap bitmap = imageContainer.getBitmap();
                         if (bitmap != null) {
-                            Palette p = Palette.generate(bitmap, 12);
-                            mMutedColor = p.getDarkMutedColor(0xFF333333);
                             mPhotoView.setImageBitmap(imageContainer.getBitmap());
                             scheduleStartPostponedTransition(mPhotoView);
                         }
@@ -350,7 +349,8 @@ public class ArticleDetailFragment extends Fragment implements
     @Override
     public void onPause() {
         super.onPause();
-        mAppBarLayout.removeOnOffsetChangedListener(this);
+        if (mAppBarLayout!=null)
+            mAppBarLayout.removeOnOffsetChangedListener(this);
     }
 
     public int getUpButtonFloor() {
@@ -365,17 +365,13 @@ public class ArticleDetailFragment extends Fragment implements
     }
 
     public CustomAspectImage getImage() {
-        if(mRootView.findViewById(R.id.photo)!=null&&mExpanded){
-            return mPhotoView;
+
+        if(mRootView.findViewById(R.id.photo)!=null){
+            if(mExpanded|| !(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) )
+                return mPhotoView;
         }
         return null;
     }
-    private static boolean isViewInBounds(@NonNull View container, @NonNull View view) {
-        Rect containerBounds = new Rect();
-        container.getHitRect(containerBounds);
-        return view.getLocalVisibleRect(containerBounds);
-    }
-
     @Override
     public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
         if (Math.abs(verticalOffset) == appBarLayout.getTotalScrollRange()) {

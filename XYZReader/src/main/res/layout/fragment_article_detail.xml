@@ -7,7 +7,8 @@
         android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
         android:layout_height="305dp"
-        android:background="?colorPrimary">
+        android:elevation="@dimen/appbar_elevation"
+        >
 
         <android.support.design.widget.CollapsingToolbarLayout
             android:id="@+id/collapsing_toolbar_layout"
@@ -82,7 +83,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
-            app:cardElevation="8dp"
+            app:cardElevation="@dimen/cardview_default_elevation"
             app:contentPadding="16dp"
             >
 
@@ -107,7 +108,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/fab_margin"
         android:src="@drawable/ic_share"
-        app:layout_behavior=""
+        android:elevation="@dimen/fab_elevation"
         app:layout_anchor="@id/app_bar_layout"
         app:layout_anchorGravity="bottom|right|end"
         android:contentDescription="@string/action_share"
