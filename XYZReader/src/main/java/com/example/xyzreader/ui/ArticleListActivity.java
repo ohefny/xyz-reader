@@ -81,18 +81,24 @@ public class ArticleListActivity extends AppCompatActivity implements
     private long startItemPos=0;
 
     private Bundle mTmpReenterState;
+    private int mCurrentItem;
     private final SharedElementCallback mCallback = new SharedElementCallback() {
         @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
             if (mTmpReenterState != null) {
-                int mCurrentItem=mTmpReenterState.getInt(CURRENT_ELEMENT_KEY);
+                mCurrentItem=mTmpReenterState.getInt(CURRENT_ELEMENT_KEY);
                 int startItemPos=mTmpReenterState.getInt(START_ELEMENT_KEY);
+                View view=mRecyclerView.getChildAt(mCurrentItem);
+                if(startItemPos==mCurrentItem&&view!=null){
+                  //  scheduleStartPostPone(view);
+                }
                 if(startItemPos!=mCurrentItem&&mRecyclerView.getAdapter()!=null){
-                    View view=mRecyclerView.getChildAt(mCurrentItem);
+
 //                    view.setTransitionName(getResources().getString(R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem));
-                    Log.d(ArticleListActivity.class.getSimpleName(),"Fuck Return Transition Name :: "+getResources().getString(R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem));
+
                     if(view!=null){
+                        Log.d(ArticleListActivity.class.getSimpleName(),"Fuck Return Transition Name :: "+getResources().getString(R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem));
                         //names.remove(mRecyclerView.getChildAt(startItemPos).getTransitionName());
                         names.clear();
                         names.add(getResources().getString(R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem));
@@ -101,9 +107,14 @@ public class ArticleListActivity extends AppCompatActivity implements
                         sharedElements.clear();
                         sharedElements.put(getResources().getString
                                         (R.string.article_img_transition)+mRecyclerView.getAdapter().getItemId(mCurrentItem), view);
+                        scheduleStartPostPone(view);
+                    }
+                    else{
+                        startPostponedEnterTransition();
                     }
 
                 }
+
 
                 else if(mRecyclerView.getAdapter()==null) {
                     sharedElements.clear();
@@ -117,33 +128,38 @@ public class ArticleListActivity extends AppCompatActivity implements
             }
     };
 
+
     @Override
     public void onActivityReenter(int resultCode, Intent data) {
 
         mTmpReenterState = new Bundle(data.getExtras());
-        int mCurrentItem=mTmpReenterState.getInt(CURRENT_ELEMENT_KEY);
+        mCurrentItem=mTmpReenterState.getInt(CURRENT_ELEMENT_KEY);
         int startItemPos=mTmpReenterState.getInt(START_ELEMENT_KEY);
         if(mCurrentItem!=startItemPos){
             mRecyclerView.scrollToPosition(mCurrentItem);
         }
-        postPoneTransition();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            postponeEnterTransition();
+            scheduleStartPostPone(mRecyclerView.getChildAt(mCurrentItem));
+        }
         super.onActivityReenter(resultCode, data);
     }
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void scheduleStartPostPone(final View sharedElement){
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void postPoneTransition() {
-        postponeEnterTransition();
-        mRecyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+        if(sharedElement==null){
+            startPostponedEnterTransition(); return;
+        }
+        sharedElement.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
             @Override
             public boolean onPreDraw() {
-                mRecyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
-                mRecyclerView.requestLayout();
+                sharedElement.getViewTreeObserver().removeOnPreDrawListener(this);
+                sharedElement.requestLayout();
                 startPostponedEnterTransition();
                 return true;
             }
         });
     }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -214,7 +230,7 @@ public class ArticleListActivity extends AppCompatActivity implements
         StaggeredGridLayoutManager sglm =
                 new StaggeredGridLayoutManager(columnCount, StaggeredGridLayoutManager.VERTICAL);
        // sglm.setGapStrategy(0);
-        mRecyclerView.setLayoutManager(gridLayoutManager);
+        mRecyclerView.setLayoutManager(sglm);
     }
 
     @Override
@@ -325,7 +341,9 @@ public class ArticleListActivity extends AppCompatActivity implements
                                 holder.bitmap=imageContainer.getBitmap();
                                 holder.thumbnailView.setImageBitmap(imageContainer.getBitmap());
                                 holder.bgView.setBackgroundColor(holder.mutedColor);
-                                holder.thumbnailView.setAspectRatio(mCursor.getFloat(ArticleLoader.Query.ASPECT_RATIO));
+                                //holder.titleView.setTextColor(p.getVibrantColor(0xFF000000));
+                                holder.subtitleView.setTextColor(p.getDarkVibrantColor(0xFF000000));
+
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                                     holder.thumbnailView.setTransitionName(getResources().getString(R.string.article_img_transition)+getItemId(position));
                                 }
@@ -340,6 +358,7 @@ public class ArticleListActivity extends AppCompatActivity implements
             holder.thumbnailView.setImageUrl(
                    mCursor.getString(ArticleLoader.Query.THUMB_URL),
                     ImageLoaderHelper.getInstance(ArticleListActivity.this).getImageLoader());
+            holder.thumbnailView.setAspectRatio(mCursor.getFloat(ArticleLoader.Query.ASPECT_RATIO));
 
         }
 

@@ -9,6 +9,7 @@ import android.content.Loader;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 
@@ -19,6 +20,8 @@ import java.util.GregorianCalendar;
 
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ShareCompat;
@@ -49,7 +52,7 @@ import com.example.xyzreader.data.ArticleLoader;
  * tablets) or a {@link ArticleDetailActivity} on handsets.
  */
 public class ArticleDetailFragment extends Fragment implements
-        LoaderManager.LoaderCallbacks<Cursor> {
+        LoaderManager.LoaderCallbacks<Cursor>, AppBarLayout.OnOffsetChangedListener {
     private static final String DATA_LOADED = "LOADED";
     private static final String BODY_KEY ="BODY_KEY" ;
     private final String TITLE_KEY="TITLE_KEY";
@@ -94,6 +97,8 @@ public class ArticleDetailFragment extends Fragment implements
     private boolean data_loaded;
     private String mBody;
     private String mImgUrl;
+    private AppBarLayout mAppBarLayout;
+    private boolean mExpanded;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -148,6 +153,12 @@ public class ArticleDetailFragment extends Fragment implements
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        mAppBarLayout.addOnOffsetChangedListener(this);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
 
@@ -173,7 +184,7 @@ public class ArticleDetailFragment extends Fragment implements
                         .getIntent(), getString(R.string.action_share)));
             }
         });
-
+       mAppBarLayout= (AppBarLayout) mRootView.findViewById(R.id.app_bar_layout);
 
         if(savedInstanceState!=null&&savedInstanceState.getBoolean(DATA_LOADED)){
             mBody=savedInstanceState.getString(BODY_KEY);
@@ -336,6 +347,11 @@ public class ArticleDetailFragment extends Fragment implements
 
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        mAppBarLayout.removeOnOffsetChangedListener(this);
+    }
 
     public int getUpButtonFloor() {
         if (mPhotoContainerView == null || mPhotoView.getHeight() == 0) {
@@ -349,9 +365,23 @@ public class ArticleDetailFragment extends Fragment implements
     }
 
     public CustomAspectImage getImage() {
-        if(mRootView.findViewById(R.id.photo)!=null){
+        if(mRootView.findViewById(R.id.photo)!=null&&mExpanded){
             return mPhotoView;
         }
         return null;
+    }
+    private static boolean isViewInBounds(@NonNull View container, @NonNull View view) {
+        Rect containerBounds = new Rect();
+        container.getHitRect(containerBounds);
+        return view.getLocalVisibleRect(containerBounds);
+    }
+
+    @Override
+    public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
+        if (Math.abs(verticalOffset) == appBarLayout.getTotalScrollRange()) {
+            mExpanded=false;
+        } else{
+            mExpanded=true;
+        }
     }
 }

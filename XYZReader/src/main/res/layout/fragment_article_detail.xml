@@ -66,8 +66,8 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="10dp"
-            android:paddingBottom="10dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="20dp"
             android:id="@+id/byLine"
             android:textColor="@color/titles_color"
             android:textSize="@dimen/detail_subtitle_text_size"
@@ -105,11 +105,11 @@
         android:layout_width="wrap_content"
         android:id="@+id/share_fab"
         android:layout_height="wrap_content"
-        android:background="@drawable/add_fab_background"
-        android:layout_marginRight="@dimen/fab_margin"
         android:layout_marginBottom="@dimen/fab_margin"
         android:src="@drawable/ic_share"
-        android:layout_gravity="bottom|end"
+        app:layout_behavior=""
+        app:layout_anchor="@id/app_bar_layout"
+        app:layout_anchorGravity="bottom|right|end"
         android:contentDescription="@string/action_share"
         />
 

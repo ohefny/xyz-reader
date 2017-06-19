@@ -58,7 +58,7 @@ public class ArticleDetailActivity extends AppCompatActivity
 
     FrameLayout progressBarHolder;
     private int mStartingPosition;
-    private int mCurrentPosition;
+    private int mCurrentPosition=-1;
     private boolean mIsReturning;
     private ArticleDetailFragment mCurrentDetailsFragment;
     private final SharedElementCallback mCallback = new SharedElementCallback() {
@@ -84,6 +84,7 @@ public class ArticleDetailActivity extends AppCompatActivity
                     names.add(str);
                     sharedElements.clear();
                     sharedElements.put(str, sharedElement);
+                    Log.d(ArticleDetailActivity.class.getSimpleName(),"Fuck Return Transition Name :: "+sharedElement.getTransitionName());
                 }
                 if(mDestroyed){
                     getWindow().setSharedElementReturnTransition(null);
